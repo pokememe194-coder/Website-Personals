@@ -1,0 +1,415 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Stars, Lock, Unlock, Send, Sparkles, Clock, Camera, 
+  ChevronRight, Trophy, Music, Volume2, VolumeX, 
+  Calendar, MapPin, Gift, Bookmark, MessageCircle, Menu, X,
+  ExternalLink, MousePointer2, Play, Pause, AlertCircle, RefreshCcw
+} from 'lucide-react';
+
+// Ikon Mawar Custom SVG - Simbol Ketulusan
+const RoseIcon = ({ size = 24, className = "" }) => (
+  <svg 
+    width={size} 
+    height={size} 
+    viewBox="0 0 24 24" 
+    fill="none" 
+    stroke="currentColor" 
+    strokeWidth="1.5" 
+    strokeLinecap="round" 
+    strokeLinejoin="round" 
+    className={className}
+  >
+    <path d="M12 10c2.5-3 5-3 7-1s.5 5.5-2 7.5c-1.5 1.2-3.5 1.5-5 1.5s-3.5-.3-5-1.5c-2.5-2-4-5.5-2-7.5 2-2 4.5-2 7 1z" fill="currentColor" fillOpacity="0.2"/>
+    <path d="M12 10c-1-1.5-2.5-2.5-4-2.5-2.5 0-4.5 2.5-3 5 .5 1 1.5 2 2.5 2.5"/>
+    <path d="M12 10c1-1.5 2.5-2.5 4-2.5 2.5 0 4.5 2.5 3 5-.5 1-1.5 2-2.5 2.5"/>
+    <path d="M12 19v3"/>
+    <path d="M12 19c-2 0-4-1-4-1"/>
+    <path d="M12 16c2 0 4 1 4 1"/>
+  </svg>
+);
+
+// --- KOMPONEN BACKGROUND GALAXY 3D MENGGUNAKAN THREE.JS ---
+const GalaxyBackground = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js";
+    script.onload = initThree;
+    document.head.appendChild(script);
+
+    let scene, camera, renderer, starStuff, starsGeometry;
+    let mouseX = 0, mouseY = 0;
+
+    function initThree() {
+      const THREE = window.THREE;
+      if (!THREE || !canvasRef.current) return;
+
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 1;
+      camera.rotation.x = Math.PI / 2;
+
+      renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, alpha: true, antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // Membuat partikel bintang untuk galaksi
+      starsGeometry = new THREE.BufferGeometry();
+      const starCount = 6000;
+      const positions = new Float32Array(starCount * 3);
+      const colors = new Float32Array(starCount * 3);
+
+      const colorOptions = [
+        new THREE.Color(0xff69b4), // Pink
+        new THREE.Color(0x9370db), // Purple
+        new THREE.Color(0xadd8e6), // Biru Muda
+        new THREE.Color(0xffffff)  // Putih
+      ];
+
+      for (let i = 0; i < starCount; i++) {
+        const i3 = i * 3;
+        const radius = Math.random() * 5;
+        const spinAngle = radius * 5;
+        const branchAngle = (i % 3) * ((Math.PI * 2) / 3);
+
+        const x = Math.cos(branchAngle + spinAngle) * radius + (Math.random() - 0.5) * 0.4;
+        const y = (Math.random() - 0.5) * 0.2;
+        const z = Math.sin(branchAngle + spinAngle) * radius + (Math.random() - 0.5) * 0.4;
+
+        positions[i3] = x;
+        positions[i3 + 1] = y;
+        positions[i3 + 2] = z;
+
+        const mixedColor = colorOptions[Math.floor(Math.random() * colorOptions.length)];
+        colors[i3] = mixedColor.r;
+        colors[i3 + 1] = mixedColor.g;
+        colors[i3 + 2] = mixedColor.b;
+      }
+
+      starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      starsGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      const starMaterial = new THREE.PointsMaterial({
+        size: 0.015,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        sizeAttenuation: true
+      });
+
+      starStuff = new THREE.Points(starsGeometry, starMaterial);
+      scene.add(starStuff);
+
+      animate();
+    }
+
+    function animate() {
+      if (!renderer || !scene || !camera) return;
+      requestAnimationFrame(animate);
+      
+      if (starStuff) {
+        starStuff.rotation.y += 0.001;
+      }
+
+      camera.position.x += (mouseX * 0.05 - camera.position.x) * 0.05;
+      camera.position.y += (-mouseY * 0.05 - camera.position.y) * 0.05;
+      camera.lookAt(scene.position);
+
+      renderer.render(scene, camera);
+    }
+
+    const handleMouseMove = (e) => {
+      mouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseY = (e.clientY / window.innerHeight) * 2 - 1;
+    };
+
+    const handleResize = () => {
+      if (camera && renderer) {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      }
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', handleResize);
+      if (document.head.contains(script)) document.head.removeChild(script);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none bg-[#050505]" />;
+};
+
+const App = () => {
+  const [activeSection, setActiveSection] = useState('home');
+  const [stage, setStage] = useState(0); 
+  const [inputValue, setInputValue] = useState('');
+  const [error, setError] = useState('');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [imageStatus, setImageStatus] = useState('loading');
+
+  const possibleFiles = ["Pacar.jpg", "IMG-20260316-WA0131(1) (1).jpg"];
+
+  // KONFIGURASI JAWABAN
+  const answers = {
+    riddle: "11",
+    word: "sayang",
+    date: "27" 
+  };
+
+  const handleNextStage = (e) => {
+    e.preventDefault();
+    const currentAnswer = inputValue.toLowerCase().trim();
+    if ((stage === 1 && currentAnswer === answers.riddle) || 
+        (stage === 2 && currentAnswer === answers.word) || 
+        (stage === 3 && currentAnswer === answers.date)) {
+      setStage(stage + 1);
+      setInputValue('');
+      setError('');
+    } else {
+      setError('Maaf sayang, jawabannya belum tepat.. 🌹');
+    }
+  };
+
+  const navLinks = [
+    { id: 'home', label: 'Penyesalan', icon: <AlertCircle size={16}/> },
+    { id: 'quest', label: 'Maafku', icon: <Unlock size={16}/> },
+  ];
+
+  return (
+    <div className="text-slate-100 font-sans selection:bg-rose-500 selection:text-white overflow-x-hidden min-h-screen relative">
+      <GalaxyBackground />
+
+      {/* Navbar Mewah */}
+      <nav className="fixed top-0 w-full bg-black/20 backdrop-blur-xl z-[100] border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2 group cursor-pointer">
+            <div className="bg-rose-600 p-2.5 rounded-2xl text-white shadow-lg shadow-rose-900/20 transition-transform hover:rotate-12">
+              <RoseIcon size={24} />
+            </div>
+            <span className="font-serif italic text-2xl font-bold tracking-tight text-white">
+              Pazeto<span className="text-rose-500">sze</span>
+            </span>
+          </div>
+
+          <div className="hidden md:flex items-center gap-1">
+            {navLinks.map(link => (
+              <a 
+                key={link.id}
+                href={`#${link.id}`}
+                className={`px-6 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all flex items-center gap-2 ${activeSection === link.id ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/40' : 'text-slate-300 hover:text-white hover:bg-white/10'}`}
+              >
+                {link.icon} {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <section id="home" className="relative min-h-screen flex items-center justify-center pt-20 px-6 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="text-left space-y-8 animate-in fade-in slide-in-from-left-20 duration-1000 relative z-10">
+            <div className="inline-flex items-center gap-3 bg-white/5 backdrop-blur-md px-6 py-3 rounded-full border border-white/10">
+              <RoseIcon className="text-rose-400" size={20} />
+              <span className="font-black text-rose-400 text-xs tracking-widest uppercase leading-none italic">Permohonan Maaf Tulus dari Galaksi Terjauh</span>
+            </div>
+            <h1 className="text-6xl md:text-8xl font-serif font-light text-white leading-[1.1] tracking-tighter">
+              Beri Aku <br/>
+              <span className="text-rose-500 italic font-medium">Kesempatan.</span>
+            </h1>
+            <p className="text-xl text-slate-300 font-light leading-relaxed max-w-lg">
+              Aku tahu aku telah melakukan kesalahan. Namun seperti bintang yang tak pernah lelah bersinar di kegelapan, aku pun takkan lelah memohon maafmu.
+            </p>
+            <div className="flex gap-4">
+              <a href="#quest" className="px-10 py-5 bg-white text-black rounded-2xl font-bold tracking-widest uppercase text-[10px] hover:bg-slate-200 transition-all shadow-xl">Buka Pesan Tersembunyi</a>
+            </div>
+          </div>
+
+          <div className="relative group animate-in fade-in zoom-in duration-1000 delay-300 z-10 hidden lg:block">
+            <div className="absolute -inset-10 bg-rose-600/20 blur-[100px] opacity-40 animate-pulse"></div>
+            <div className="relative bg-white/5 backdrop-blur-sm p-4 rounded-[3.5rem] border border-white/20 shadow-2xl overflow-hidden transform hover:-rotate-2 transition-transform">
+              <div className="aspect-[3/4] rounded-[2.8rem] overflow-hidden relative shadow-inner">
+                <img 
+                  src={possibleFiles[0]} 
+                  className={`w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 ${imageStatus === 'loaded' ? 'opacity-100' : 'opacity-0'}`} 
+                  alt="Wanita Tercantik" 
+                  onLoad={() => setImageStatus('loaded')}
+                  onError={(e) => { e.target.src = possibleFiles[1]; }}
+                />
+                {imageStatus === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-black/20"><div className="w-10 h-10 border-4 border-white/10 border-t-rose-500 rounded-full animate-spin"></div></div>}
+              </div>
+              <div className="absolute top-10 right-10 bg-rose-600 p-4 rounded-3xl shadow-xl animate-bounce border-2 border-white/20">
+                <RoseIcon className="text-white" size={28} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quest Section */}
+      <section id="quest" className="py-32 px-6 relative z-10">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="bg-black/40 backdrop-blur-3xl p-12 md:p-24 rounded-[5rem] shadow-[0_50px_100px_rgba(0,0,0,0.5)] border border-white/10 relative overflow-hidden">
+            {stage < 4 ? (
+              <div className="space-y-10 animate-in zoom-in duration-500">
+                {stage === 0 ? (
+                  <>
+                    <div className="bg-rose-950/30 p-8 rounded-full inline-block mb-4 border border-rose-500/20">
+                      <Lock size={64} className="text-rose-500 mx-auto drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]" />
+                    </div>
+                    <h3 className="text-4xl font-serif text-white leading-tight tracking-tight">Kunci Menuju <br/> <span className="text-rose-500 italic">Pintu Maafmu</span></h3>
+                    <p className="text-slate-400 italic font-light max-w-sm mx-auto">
+                      "Selesaikan tantangan kecil ini untuk membuktikan bahwa kita masih memiliki koneksi yang tak terputuskan."
+                    </p>
+                    <button onClick={() => setStage(1)} className="px-12 py-5 bg-rose-600 text-white rounded-2xl font-black uppercase tracking-[0.3em] text-[10px] shadow-[0_10px_30px_rgba(225,29,72,0.3)] hover:bg-rose-500 transition-all hover:scale-105">Mulai Pembuktian</button>
+                  </>
+                ) : (
+                  <div className="space-y-12">
+                    <div className="flex justify-center gap-3">
+                      {[1, 2, 3].map(i => (
+                        <div key={i} className={`w-3 h-3 rounded-full transition-all duration-500 ${stage >= i ? 'bg-rose-500 scale-125 shadow-[0_0_15px_rgba(244,63,94,1)]' : 'bg-white/10'}`}></div>
+                      ))}
+                    </div>
+                    
+                    {stage === 1 && (
+                      <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                        <h4 className="text-2xl font-serif italic text-white">"Ingatkah kamu tanggal berapa aku lahir?"</h4>
+                        <form onSubmit={handleNextStage} className="space-y-4">
+                          <input 
+                            type="text" 
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Ketik di sini..."
+                            className="w-full bg-white/5 px-8 py-5 rounded-3xl border border-white/10 focus:border-rose-500 outline-none text-center font-serif text-2xl shadow-sm text-white transition-all"
+                          />
+                          {error && <p className="text-rose-500 text-xs font-bold animate-pulse">{error}</p>}
+                          <button className="w-full py-5 bg-white text-black rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-lg">Langkah Pertama</button>
+                        </form>
+                      </div>
+                    )}
+
+                    {stage === 2 && (
+                      <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                        <h4 className="text-2xl font-serif tracking-widest uppercase text-rose-500 leading-tight">S - N - G - Y - A - A</h4>
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Sapaan paling manis untukmu...</p>
+                        <form onSubmit={handleNextStage} className="space-y-4">
+                          <input 
+                            type="text" 
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="Susun kata..."
+                            className="w-full bg-white/5 px-8 py-5 rounded-3xl border border-white/10 focus:border-rose-500 outline-none text-center font-bold tracking-widest text-2xl text-white transition-all"
+                          />
+                          {error && <p className="text-rose-500 text-xs font-bold animate-pulse">{error}</p>}
+                          <button className="w-full py-5 bg-white text-black rounded-3xl font-black uppercase tracking-widest text-[10px]">Langkah Kedua</button>
+                        </form>
+                      </div>
+                    )}
+
+                    {stage === 3 && (
+                      <div className="space-y-8 animate-in slide-in-from-right duration-500">
+                        <h4 className="text-2xl font-serif italic leading-relaxed text-white">"Tanggal berapa yayang lahir?"</h4>
+                        <p className="text-slate-400 text-[10px] tracking-widest uppercase">Ketik tanggal saja sayang (kunci kebahagiaanku)</p>
+                        <form onSubmit={handleNextStage} className="space-y-4">
+                          <input 
+                            type="number" 
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            placeholder="00"
+                            className="w-full bg-white/5 px-8 py-6 rounded-3xl border border-white/10 focus:border-rose-500 outline-none text-center font-black text-4xl tracking-[0.5em] text-white"
+                          />
+                          {error && <p className="text-rose-500 text-xs font-bold animate-pulse">{error}</p>}
+                          <button className="w-full py-5 bg-gradient-to-r from-rose-600 to-rose-800 text-white rounded-3xl font-black uppercase tracking-widest text-[10px] shadow-2xl">Buka Gerbang Maaf</button>
+                        </form>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* REVEALED CONTENT */
+              <div className="animate-in fade-in zoom-in duration-1000 text-left relative z-10">
+                <div className="flex items-center gap-4 mb-12">
+                  <div className="p-4 bg-rose-600 text-white rounded-2xl shadow-[0_0_20px_rgba(225,29,72,0.4)] animate-pulse">
+                    <RoseIcon size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-serif text-white italic leading-none tracking-tight">Surat Penyesalanku</h3>
+                    <p className="text-slate-400 uppercase text-[10px] font-black tracking-widest mt-1">Pazetosze • Eternity Apology</p>
+                  </div>
+                </div>
+                
+                <div className="prose prose-invert max-w-none text-slate-300 font-light leading-[2.2] text-lg space-y-8">
+                  <p className="font-serif italic text-2xl text-rose-300 mb-8 tracking-tight">"Hai cintaku,"</p>
+                  <p>
+                    Aku menulis ini dalam keheningan galaksi pikiranku yang hanya berisi namamu. Aku sadar bahwa tindakanku baru-baru ini telah menggores hatimu yang begitu luas dan tulus.
+                  </p>
+                  <p>
+                    Website ini adalah caraku untuk berhenti sejenak dari egoku dan melihat kembali betapa berharganya setiap kepingan tentang dirimu. Kamu adalah rumah, tujuan, dan cahaya abadi di semestaku.
+                  </p>
+                  <p className="font-serif italic text-2xl text-white border-l-4 border-rose-600 pl-8 my-12 bg-white/5 py-6 rounded-r-xl">
+                    "Maafkan aku, sayang. Izinkan aku memperbaiki mawar cinta kita yang sedikit layu agar ia mekar lebih kuat dan indah dari sebelumnya."
+                  </p>
+                  <p>
+                    Terima kasih telah bersabar menghadapiku. Aku sangat menyayangimu, selamanya.
+                  </p>
+                </div>
+
+                <div className="mt-20 pt-10 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-8">
+                  <div className="space-y-2 text-center md:text-left">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Mencintaimu Melampaui Bintang,</p>
+                    <p className="text-2xl font-serif italic text-white tracking-tight">Pasanganmu ❤️</p>
+                  </div>
+                  <div className="w-24 h-24 bg-rose-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_10px_40px_rgba(225,29,72,0.5)] rotate-6 group hover:rotate-0 transition-all cursor-pointer">
+                    <RoseIcon size={44} className="group-hover:scale-110 transition-transform" />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-20 bg-black text-white text-center relative overflow-hidden z-20">
+        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-rose-500 to-transparent opacity-50"></div>
+        <div className="max-w-7xl mx-auto px-6 space-y-8 relative z-10">
+          <div className="flex items-center justify-center gap-2 font-serif text-3xl italic">
+            <RoseIcon className="text-rose-500 animate-pulse" />
+            <span className="tracking-tighter">Pazetosze.</span>
+          </div>
+          <p className="text-slate-500 max-w-md mx-auto font-light text-sm italic leading-loose">
+            "Meskipun galaksi begitu luas, namun hanya di hatimulah aku menemukan tempat yang paling nyaman untuk pulang."
+          </p>
+          <p className="text-[10px] font-black uppercase tracking-[0.6em] text-slate-700">
+            © 2024 Pazetosze Galactic Apology • Handcrafted with Soul
+          </p>
+        </div>
+      </footer>
+
+      {/* Music Player Floating (DIPERBARUI: About You) */}
+      <div className="fixed bottom-10 left-10 z-50">
+        <button 
+          onClick={() => setIsPlaying(!isPlaying)}
+          className={`flex items-center gap-4 bg-black/40 backdrop-blur-2xl p-2 pr-6 rounded-full border border-white/10 shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:bg-black/60 transition-all group ${isPlaying ? 'border-rose-500/50 ring-1 ring-rose-500/20' : ''}`}
+        >
+          <div className={`p-4 rounded-full transition-all ${isPlaying ? 'bg-rose-600 text-white animate-spin-slow shadow-[0_0_20px_rgba(225,29,72,0.6)]' : 'bg-white/10 text-slate-400'}`}>
+            <Music size={20} />
+          </div>
+          <div className="text-left">
+            <p className="text-[10px] font-black uppercase tracking-widest text-rose-500 leading-none mb-1 tracking-widest">About You</p>
+            <p className="text-xs font-bold text-white tracking-tight">{isPlaying ? 'Sedang Memutar...' : 'Hening'}</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default App;
